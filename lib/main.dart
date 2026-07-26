@@ -1,21 +1,32 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:nidar/theme/app_theme.dart';
 import 'package:nidar/screens/dashboard_screen.dart';
-import 'package:nidar/services/mock_data.dart';
-import 'package:nidar/widgets/telemetry_card.dart';
 
-void main(){
-  runApp(const NidarApp());
+void main() => runApp(const NidarApp());
+
+class NidarApp extends StatefulWidget {
+  const NidarApp({super.key});
+
+  @override
+  State<NidarApp> createState() => _NidarAppState();
 }
 
-class NidarApp extends StatelessWidget {
-  const NidarApp({super.key});
+class _NidarAppState extends State<NidarApp> {
+  ThemeMode _mode = ThemeMode.dark;
+
+  void _toggleTheme() =>
+      setState(() => _mode = _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: DashboardScreen(),
-      theme: ThemeData.dark(),
+      title: 'NIDAR GCS',
       debugShowCheckedModeBanner: false,
+      themeMode: _mode,
+      theme: lightAppTheme,
+      darkTheme: darkAppTheme,
+      home: DashboardScreen(onToggleTheme: _toggleTheme, themeMode: _mode),
     );
   }
 }

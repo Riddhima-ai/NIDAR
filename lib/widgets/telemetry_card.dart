@@ -1,130 +1,129 @@
 import 'package:flutter/material.dart';
-import 'package:nidar/models/drone_data.dart';
+import 'package:nidar/state/mission_state.dart';
+import 'package:nidar/theme/app_theme.dart';
 
 class TelemetryCard extends StatelessWidget {
-  final DroneData droneData;
-
-  const TelemetryCard({
-    super.key,
-    required this.droneData,
-  });
-
-  Widget telemetryRow(
-      IconData icon,
-      String title,
-      String value,
-      Color color,
-      ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 22,
-          ),
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 15,
-              ),
-            ),
-          ),
-
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  final MissionState mission;
+  const TelemetryCard({super.key, required this.mission});
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Card(
-      color: const Color(0xff222831),
-      elevation: 6,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Text(
+                  'TELEMETRY',
+                  style: TextStyle(
+                    color: p.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.signal_cellular_alt, size: 16, color: p.textSecondary),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 6),
 
-            const Text(
-              "Telemetry",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            // Everything below scrolls internally instead of overflowing
+            // when the parent gives this card a fixed height.
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _row(
+                      p,
+                      Icons.battery_full,
+                      'Battery',
+                      '${mission.battery} %',
+                      mission.battery < 25 ? p.danger : p.success,
+                    ),
+                    _row(
+                      p,
+                      Icons.height,
+                      'Altitude',
+                      '${mission.altitude.toStringAsFixed(1)} m',
+                      p.textPrimary,
+                    ),
+                    _row(
+                      p,
+                      Icons.speed,
+                      'Speed',
+                      '${mission.speed.toStringAsFixed(1)} m/s',
+                      p.textPrimary,
+                    ),
+                    _row(
+                      p,
+                      Icons.smart_toy_outlined,
+                      'Flight Mode',
+                      'AUTO',
+                      p.accent,
+                    ),
+                    _row(
+                      p,
+                      Icons.wifi_tethering,
+                      'Signal Strength',
+                      '${mission.signalDbm.toStringAsFixed(0)} dBm',
+                      p.textPrimary,
+                    ),
+                    _row(
+                      p,
+                      Icons.satellite_alt_outlined,
+                      'Satellites',
+                      '0 (GPS Denied)',
+                      p.danger,
+                    ),
+                    _row(
+                      p,
+                      Icons.thermostat,
+                      'Temperature',
+                      '${mission.tempC.toStringAsFixed(0)} °C',
+                      p.textPrimary,
+                    ),
+                  ],
+                ),
               ),
-            ),
-
-            const SizedBox(height: 15),
-
-            const Divider(color: Colors.white24),
-
-            telemetryRow(
-              Icons.battery_full,
-              "Battery",
-              "${droneData.battery} %",
-              Colors.green,
-            ),
-
-            telemetryRow(
-              Icons.height,
-              "Altitude",
-              "${droneData.altitude} m",
-              Colors.orange,
-            ),
-
-            telemetryRow(
-              Icons.speed,
-              "Speed",
-              "${droneData.speed} m/s",
-              Colors.blue,
-            ),
-
-            telemetryRow(
-              Icons.explore,
-              "Heading",
-              "${droneData.heading}°",
-              Colors.purple,
-            ),
-
-            telemetryRow(
-              Icons.satellite_alt,
-              "GPS Satellites",
-              "${droneData.gpsSatellites}",
-              Colors.amber,
-            ),
-
-            telemetryRow(
-              droneData.connected
-                  ? Icons.check_circle
-                  : Icons.cancel,
-              "Status",
-              droneData.connected
-                  ? "Connected"
-                  : "Disconnected",
-              droneData.connected
-                  ? Colors.green
-                  : Colors.red,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _row(
+    AppPalette p,
+    IconData icon,
+    String label,
+    String value,
+    Color valueColor,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: p.textSecondary),
+          const SizedBox(width: 10),
+          Text(label, style: TextStyle(color: p.textSecondary, fontSize: 13.5)),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
