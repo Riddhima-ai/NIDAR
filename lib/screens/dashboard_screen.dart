@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nidar/state/mission_state.dart';
 import 'package:nidar/theme/app_theme.dart';
 import 'package:nidar/widgets/camera_feed_panel.dart';
+import 'package:nidar/widgets/camera_fullscreen_view.dart';
 import 'package:nidar/widgets/footer_status_bar.dart';
 import 'package:nidar/widgets/live_map_grid.dart';
 import 'package:nidar/widgets/mission_controls_panel.dart';
@@ -31,6 +32,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final MissionState mission = MissionState();
   NavSection selected = NavSection.dashboard;
+  bool cameraCollapsed = false; // <-- must exist
 
   @override
   void initState() {
@@ -87,7 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Container(height: 1, color: p.border),
                 Expanded(
-                  child: Padding(
+                  child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
                     child: _buildBody(),
                   ),
@@ -106,39 +108,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case NavSection.dashboard:
         return _dashboardBody();
       case NavSection.map:
-        return LiveMapGrid(mission: mission);
+        return SizedBox(height: 700, child: LiveMapGrid(mission: mission));
       case NavSection.survivors:
-        return SurvivorsPanel(mission: mission);
+        return SizedBox(height: 700, child: SurvivorsPanel(mission: mission));
       case NavSection.telemetry:
-        return TelemetryCard(mission: mission);
+        return SizedBox(height: 700, child: TelemetryCard(mission: mission));
       case NavSection.mission:
-        return Column(
-          children: [
-            // Fixed height so timeline nodes with 2-line labels
-            // (e.g. "Survivor #1 Found") never overflow.
-            SizedBox(height: 160, child: MissionTimelinePanel(mission: mission)),
-            const SizedBox(height: 16),
-            Expanded(child: MissionControlsPanel(mission: mission)),
-          ],
+        return SizedBox(
+          height: 700,
+          child: Column(
+            children: [
+              SizedBox(height: 300, child: MissionTimelinePanel(mission: mission)),
+              const SizedBox(height: 16),
+              Expanded(child: MissionControlsPanel(mission: mission)),
+            ],
+          ),
         );
+      case NavSection.camera:
+  return SizedBox(
+    height: 700,
+    child: CameraFullscreenView(
+      mission: mission,
+      onExitFullscreen: () {
+        setState(() {
+          selected = NavSection.dashboard;
+        });
+      },
+    ),
+  );
       case NavSection.logs:
-        return NotificationsPanel(mission: mission);
+        return SizedBox(height: 700, child: NotificationsPanel(mission: mission));
     }
   }
 
   Widget _dashboardBody() {
+    const rowSpacing = 16.0;
+    
+    final cameraHeight = cameraCollapsed ? 56.0 : 380.0;
+    final survivorsHeight = cameraCollapsed ? 624.0 : 300.0;
+    final topRowHeight = cameraHeight + rowSpacing + survivorsHeight;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          // Was flex: 3 — bumped so the map/camera row gets more room
-          // relative to the bottom row.
-          flex: 4,
+        SizedBox(
+          height: topRowHeight,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(
-                width: 260,
+                width: 320,
                 child: Column(
                   children: [
                     Expanded(child: TelemetryCard(mission: mission)),
@@ -148,18 +167,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              Expanded(flex: 3, child: LiveMapGrid(mission: mission)),
+              Expanded(flex: 2, child: LiveMapGrid(mission: mission)),
               const SizedBox(width: 16),
-              // Camera feed is now the dominant panel on the right:
-              // wider (340 vs old 300) and takes 3/5 of the vertical
-              // space instead of splitting 50/50 with Survivors.
               SizedBox(
-                width: 340,
+                width: 420,
                 child: Column(
                   children: [
-                    Expanded(flex: 3, child: CameraFeedPanel(mission: mission)),
-                    const SizedBox(height: 16),
-                    Expanded(flex: 2, child: SurvivorsPanel(mission: mission)),
+                    // Animated so the collapse/expand isn't an instant snap.
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeInOut,
+                      height: cameraHeight,
+                      child: CameraFeedPanel(
+                        mission: mission,
+                        collapsed: cameraCollapsed,
+                        onToggleCollapse: () =>
+                            setState(() => cameraCollapsed = !cameraCollapsed),
+                        onExpand: () => setState(() => selected = NavSection.camera),
+                      ),
+                    ),
+                    const SizedBox(height: rowSpacing),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeInOut,
+                      height: survivorsHeight,
+                      child: SurvivorsPanel(mission: mission),
+                    ),
                   ],
                 ),
               ),
@@ -168,9 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(height: 16),
         SizedBox(
-          // Was 190 — bumped so Mission Controls has enough room for
-          // 3 buttons + divider + failsafe row without overflowing.
-          height: 260,
+          height: 300,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -182,6 +213,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }

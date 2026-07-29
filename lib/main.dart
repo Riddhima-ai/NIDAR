@@ -1,4 +1,4 @@
-// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:nidar/theme/app_theme.dart';
 import 'package:nidar/screens/dashboard_screen.dart';

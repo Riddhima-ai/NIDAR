@@ -34,8 +34,7 @@ class TelemetryCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 6),
 
-            // Everything below scrolls internally instead of overflowing
-            // when the parent gives this card a fixed height.
+            
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -76,13 +75,7 @@ class TelemetryCard extends StatelessWidget {
                       '${mission.signalDbm.toStringAsFixed(0)} dBm',
                       p.textPrimary,
                     ),
-                    _row(
-                      p,
-                      Icons.satellite_alt_outlined,
-                      'Satellites',
-                      '0 (GPS Denied)',
-                      p.danger,
-                    ),
+                    
                     _row(
                       p,
                       Icons.thermostat,

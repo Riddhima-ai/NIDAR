@@ -1,4 +1,4 @@
-// lib/state/mission_state.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -26,8 +26,7 @@ class MissionNotice {
   const MissionNotice(this.time, this.message, this.colorOf);
 }
 
-/// Single source of truth for the whole dashboard. Swap the mock timer/data
-/// generation for your real telemetry stream — the UI layer doesn't change.
+
 class MissionState extends ChangeNotifier {
   MissionPhase phase = MissionPhase.idle;
   bool armed = false;
@@ -112,7 +111,7 @@ class MissionState extends ChangeNotifier {
   void _tick() {
     elapsed += const Duration(seconds: 1);
 
-    // --- Mock progression; replace with real telemetry/backend feed ---
+    
     if (phase == MissionPhase.active) {
       if (explorationPercent < 1.0) {
         explorationPercent = (explorationPercent + 0.004).clamp(0.0, 1.0);

@@ -1,4 +1,4 @@
-// lib/widgets/top_status_bar.dart
+
 import 'package:flutter/material.dart';
 import 'package:nidar/state/mission_state.dart';
 import 'package:nidar/theme/app_theme.dart';
