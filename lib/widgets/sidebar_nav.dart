@@ -1,8 +1,7 @@
-// lib/widgets/sidebar_nav.dart
 import 'package:flutter/material.dart';
 import 'package:nidar/theme/app_theme.dart';
 
-enum NavSection { dashboard, map, survivors, telemetry, mission, logs }
+enum NavSection { dashboard, map, survivors, telemetry, mission, camera, logs }
 
 class SidebarNav extends StatelessWidget {
   final NavSection selected;
@@ -51,6 +50,7 @@ class SidebarNav extends StatelessWidget {
           _item(context, NavSection.survivors, Icons.groups_outlined, 'Survivors'),
           _item(context, NavSection.telemetry, Icons.speed_outlined, 'Telemetry'),
           _item(context, NavSection.mission, Icons.radar, 'Mission'),
+          _item(context, NavSection.camera, Icons.videocam_outlined, 'Camera'),
           _item(context, NavSection.logs, Icons.receipt_long_outlined, 'Logs'),
           const Spacer(),
           Padding(

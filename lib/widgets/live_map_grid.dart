@@ -17,7 +17,7 @@ class _LiveMapGridState extends State<LiveMapGrid> {
   static const cols = 9;
   static const rows = 9;
 
-  // Demo layout — swap for your real occupancy/SLAM grid.
+  
   final explored = <String>{
     'B2','B3','C2','C3','D3','E3','F3','F4','G4','D4','D5','C5','B5',
     'C6','D6','F6','G6','F7','F8',
