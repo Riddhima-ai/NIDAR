@@ -32,7 +32,12 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final MissionState mission = MissionState();
   NavSection selected = NavSection.dashboard;
-  bool cameraCollapsed = false; // <-- must exist
+  bool cameraCollapsed = false;
+  void onExitFullscreen() {
+  setState(() {
+    selected = NavSection.dashboard;
+  });
+}
 
   @override
   void initState() {
@@ -74,10 +79,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: p.bg,
       body: Row(
         children: [
-          SidebarNav(
-            selected: selected,
-            onSelect: (s) => setState(() => selected = s),
-            onEmergency: _emergency,
+          // Sidebar itself shrinks a bit on narrow screens instead of
+          // eating a fixed 220px no matter what.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return SidebarNav(
+                selected: selected,
+                onSelect: (s) => setState(() => selected = s),
+                onEmergency: _emergency,
+              );
+            },
           ),
           Expanded(
             child: Column(
@@ -91,7 +102,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
-                    child: _buildBody(),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return _buildBody(constraints.maxWidth);
+                      },
+                    ),
                   ),
                 ),
                 FooterStatusBar(mission: mission),
@@ -103,10 +118,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(double availableWidth) {
     switch (selected) {
       case NavSection.dashboard:
-        return _dashboardBody();
+        return _dashboardBody(availableWidth);
       case NavSection.map:
         return SizedBox(height: 700, child: LiveMapGrid(mission: mission));
       case NavSection.survivors:
@@ -125,95 +140,130 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         );
       case NavSection.camera:
-  return SizedBox(
-    height: 700,
-    child: CameraFullscreenView(
-      mission: mission,
-      onExitFullscreen: () {
-        setState(() {
-          selected = NavSection.dashboard;
-        });
-      },
-    ),
-  );
+        return SizedBox(height: 700, child: CameraFullscreenView(mission: mission,onExitFullscreen: onExitFullscreen,));
       case NavSection.logs:
         return SizedBox(height: 700, child: NotificationsPanel(mission: mission));
     }
   }
 
-  Widget _dashboardBody() {
+  Widget _dashboardBody(double availableWidth) {
     const rowSpacing = 16.0;
+
     
+    final isCompact = availableWidth < 1200;
+
+   
+    final telemetryColWidth = isCompact ? availableWidth : availableWidth * 0.20;
+    final cameraColWidth = isCompact ? availableWidth : availableWidth * 0.26;
+    // Map takes whatever's left; on compact screens it gets full width too.
+
     final cameraHeight = cameraCollapsed ? 56.0 : 380.0;
     final survivorsHeight = cameraCollapsed ? 624.0 : 300.0;
     final topRowHeight = cameraHeight + rowSpacing + survivorsHeight;
 
+    final telemetryColumn = SizedBox(
+      width: telemetryColWidth,
+      height: isCompact ? 500 : null,
+      child: Column(
+        children: [
+          Expanded(child: TelemetryCard(mission: mission)),
+          const SizedBox(height: 16),
+          Expanded(child: MissionProgress(mission: mission)),
+        ],
+      ),
+    );
+
+    final mapPanel = SizedBox(
+      height: isCompact ? 500 : topRowHeight,
+      width: isCompact ? availableWidth : null,
+      child: LiveMapGrid(mission: mission),
+    );
+
+    final cameraColumn = SizedBox(
+      width: cameraColWidth,
+      height: isCompact ? topRowHeight : null,
+      child: Column(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            height: cameraHeight,
+            child: CameraFeedPanel(
+              mission: mission,
+              collapsed: cameraCollapsed,
+              onToggleCollapse: () =>
+                  setState(() => cameraCollapsed = !cameraCollapsed),
+              onExpand: () => setState(() => selected = NavSection.camera),
+            ),
+          ),
+          const SizedBox(height: rowSpacing),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            height: survivorsHeight,
+            child: SurvivorsPanel(mission: mission),
+          ),
+        ],
+      ),
+    );
+
+    final topSection = isCompact
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              telemetryColumn,
+              const SizedBox(height: rowSpacing),
+              mapPanel,
+              const SizedBox(height: rowSpacing),
+              cameraColumn,
+            ],
+          )
+        : SizedBox(
+            height: topRowHeight,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                telemetryColumn,
+                const SizedBox(width: rowSpacing),
+                Expanded(child: mapPanel),
+                const SizedBox(width: rowSpacing),
+                cameraColumn,
+              ],
+            ),
+          );
+
+    final bottomRow = isCompact
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 300, child: MissionTimelinePanel(mission: mission)),
+              const SizedBox(height: rowSpacing),
+              SizedBox(height: 260, child: MissionControlsPanel(mission: mission)),
+              const SizedBox(height: rowSpacing),
+              SizedBox(height: 260, child: NotificationsPanel(mission: mission)),
+            ],
+          )
+        : SizedBox(
+            height: 300,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(flex: 2, child: MissionTimelinePanel(mission: mission)),
+                const SizedBox(width: rowSpacing),
+                Expanded(child: MissionControlsPanel(mission: mission)),
+                const SizedBox(width: rowSpacing),
+                Expanded(child: NotificationsPanel(mission: mission)),
+              ],
+            ),
+          );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: topRowHeight,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                width: 320,
-                child: Column(
-                  children: [
-                    Expanded(child: TelemetryCard(mission: mission)),
-                    const SizedBox(height: 16),
-                    Expanded(child: MissionProgress(mission: mission)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(flex: 2, child: LiveMapGrid(mission: mission)),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 420,
-                child: Column(
-                  children: [
-                    // Animated so the collapse/expand isn't an instant snap.
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeInOut,
-                      height: cameraHeight,
-                      child: CameraFeedPanel(
-                        mission: mission,
-                        collapsed: cameraCollapsed,
-                        onToggleCollapse: () =>
-                            setState(() => cameraCollapsed = !cameraCollapsed),
-                        onExpand: () => setState(() => selected = NavSection.camera),
-                      ),
-                    ),
-                    const SizedBox(height: rowSpacing),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeInOut,
-                      height: survivorsHeight,
-                      child: SurvivorsPanel(mission: mission),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 300,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(flex: 2, child: MissionTimelinePanel(mission: mission)),
-              const SizedBox(width: 16),
-              Expanded(child: MissionControlsPanel(mission: mission)),
-              const SizedBox(width: 16),
-              Expanded(child: NotificationsPanel(mission: mission)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
+        topSection,
+        const SizedBox(height: rowSpacing),
+        bottomRow,
+        const SizedBox(height: rowSpacing),
       ],
     );
   }
