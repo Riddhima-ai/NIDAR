@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:nidar/state/mission_state.dart';
 import 'package:nidar/theme/app_theme.dart';
@@ -37,47 +36,93 @@ class TopStatusBar extends StatelessWidget {
 
     return Container(
       color: p.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-      child: Row(
-        children: [
-          _statusPill(phaseLabel, phaseColor),
-          const SizedBox(width: 28),
-          _stat('Time Elapsed', _fmt(mission.elapsed), p),
-          const SizedBox(width: 28),
-          _statWithBar('Exploration',
-              '${(mission.explorationPercent * 100).toStringAsFixed(0)}%',
-              mission.explorationPercent, p.accent, p),
-          const SizedBox(width: 28),
-          _stat('Survivors Found',
-              '${mission.survivors.length} / ${mission.survivorsTotal}', p,
-              icon: Icons.person),
-          const SizedBox(width: 28),
-          _statWithBar('Battery', '${mission.battery}%', mission.battery / 100,
-              mission.battery < 25 ? p.danger : p.success, p),
-          const Spacer(),
-          _chip(Icons.wifi_tethering, 'Telemetry', 'Excellent', p.success, p),
-          const SizedBox(width: 10),
-          _chip(Icons.videocam_outlined, 'Video', 'Good', p.success, p),
-          const SizedBox(width: 10),
-          _chip(Icons.blur_on, 'SLAM', 'Running', p.accent, p),
-          const SizedBox(width: 10),
-          _chip(Icons.satellite_alt_outlined, 'GPS', 'Denied', p.danger, p),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: onToggleTheme,
-            icon: Icon(
-              themeMode == ThemeMode.dark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-              color: p.textSecondary,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Below this width, the status chips (Telemetry/Video/SLAM/GPS)
+          // and avatar move to their own scrollable row instead of trying
+          // to squeeze into the same line as the stats — this is what
+          // stops the overflow stripe on narrower windows.
+          final isNarrow = constraints.maxWidth < 1100;
+
+          final statsRow = SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _statusPill(phaseLabel, phaseColor),
+                const SizedBox(width: 24),
+                _stat('Time Elapsed', _fmt(mission.elapsed), p),
+                const SizedBox(width: 24),
+                _statWithBar(
+                    'Exploration',
+                    '${(mission.explorationPercent * 100).toStringAsFixed(0)}%',
+                    mission.explorationPercent,
+                    p.accent,
+                    p),
+                const SizedBox(width: 24),
+                _stat('Survivors Found',
+                    '${mission.survivors.length} / ${mission.survivorsTotal}', p,
+                    icon: Icons.person),
+                const SizedBox(width: 24),
+                _statWithBar('Battery', '${mission.battery}%',
+                    mission.battery / 100,
+                    mission.battery < 25 ? p.danger : p.success, p),
+              ],
             ),
-          ),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: p.accentMuted,
-            child: Icon(Icons.person, size: 18, color: p.accent),
-          ),
-        ],
+          );
+
+          final chipsRow = SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: p.accentMuted,
+                  child: Icon(Icons.person, size: 18, color: p.accent),
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  onPressed: onToggleTheme,
+                  icon: Icon(
+                    themeMode == ThemeMode.dark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                    color: p.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                _chip(Icons.satellite_alt_outlined, 'GPS', 'Denied', p.danger, p),
+                const SizedBox(width: 10),
+                _chip(Icons.blur_on, 'SLAM', 'Running', p.accent, p),
+                const SizedBox(width: 10),
+                _chip(Icons.videocam_outlined, 'Video', 'Good', p.success, p),
+                const SizedBox(width: 10),
+                _chip(Icons.wifi_tethering, 'Telemetry', 'Excellent', p.success, p),
+              ],
+            ),
+          );
+
+          if (isNarrow) {
+            // Stack the two rows instead of forcing them onto one line.
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                statsRow,
+                const SizedBox(height: 10),
+                chipsRow,
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: statsRow),
+              const SizedBox(width: 16),
+              chipsRow,
+            ],
+          );
+        },
       ),
     );
   }
@@ -93,12 +138,14 @@ class TopStatusBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8, height: 8,
+            width: 8,
+            height: 8,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Text(label,
-              style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12.5)),
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.w700, fontSize: 12.5)),
         ],
       ),
     );
@@ -107,10 +154,12 @@ class TopStatusBar extends StatelessWidget {
   Widget _stat(String label, String value, AppPalette p, {IconData? icon}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(label, style: TextStyle(color: p.textSecondary, fontSize: 11.5)),
         const SizedBox(height: 3),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
               Icon(icon, size: 14, color: p.textPrimary),
@@ -131,6 +180,7 @@ class TopStatusBar extends StatelessWidget {
       width: 90,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(label, style: TextStyle(color: p.textSecondary, fontSize: 11.5)),
           const SizedBox(height: 3),
