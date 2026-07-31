@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:nidar/theme/app_theme.dart';
 import 'package:nidar/screens/dashboard_screen.dart';
+import 'package:nidar/widgets/design_scale.dart';
 
 void main() => runApp(const NidarApp());
 
@@ -26,7 +26,11 @@ class _NidarAppState extends State<NidarApp> {
       themeMode: _mode,
       theme: lightAppTheme,
       darkTheme: darkAppTheme,
-      home: DashboardScreen(onToggleTheme: _toggleTheme, themeMode: _mode),
+      home: DesignScale(
+        designWidth:  1600,
+        designHeight: 900,
+        child: DashboardScreen(onToggleTheme: _toggleTheme, themeMode: _mode),
+      ),
     );
   }
 }
