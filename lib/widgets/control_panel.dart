@@ -32,8 +32,7 @@ class ControlPanel extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Buttons + failsafe row scroll internally instead of
-            // overflowing when the card is given a fixed height.
+            
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
