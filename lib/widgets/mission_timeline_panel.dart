@@ -15,7 +15,8 @@ class MissionTimelinePanel extends StatelessWidget {
     final p = context.palette;
 
     const double nodeSize = 30;
-    const double spacing = 120;
+    // Widened so labels like "Survivor #1 Found" wrap by word, not letter.
+    const double spacing = 140;
 
     return Card(
       child: Padding(
@@ -41,12 +42,14 @@ class MissionTimelinePanel extends StatelessWidget {
                   width: mission.timeline.length * spacing,
                   child: Stack(
                     children: [
-
                       /// GREY BACKGROUND LINE
+                      /// Runs between the centers of the first and last
+                      /// nodes now that each node is centered in its
+                      /// own `spacing`-wide column.
                       Positioned(
                         top: nodeSize / 2,
-                        left: nodeSize,
-                        right: nodeSize,
+                        left: spacing / 2,
+                        right: spacing / 2,
                         child: Container(
                           height: 2,
                           color: p.border,
@@ -63,7 +66,7 @@ class MissionTimelinePanel extends StatelessWidget {
 
                           return Positioned(
                             top: nodeSize / 2,
-                            left: spacing * i + nodeSize,
+                            left: spacing * i + spacing / 2 + nodeSize / 2,
                             child: Container(
                               width: spacing - nodeSize,
                               height: 2,
@@ -87,10 +90,11 @@ class MissionTimelinePanel extends StatelessWidget {
                             child: SizedBox(
                               width: spacing,
                               child: Column(
+                                // Center everything under this node so the
+                                // bubble, label, and time all line up.
                                 crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                    CrossAxisAlignment.center,
                                 children: [
-
                                   /// Bubble
                                   Container(
                                     width: nodeSize,
@@ -116,30 +120,35 @@ class MissionTimelinePanel extends StatelessWidget {
 
                                   const SizedBox(height: 12),
 
-                                  SizedBox(
-                                    width: nodeSize,
+                                  // Wider box + generous padding so text
+                                  // wraps by whole word ("Survivor #1"
+                                  // on one line, "Found" on the next)
+                                  // instead of one letter per line.
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(horizontal: 6),
                                     child: Text(
                                       e.label,
                                       textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         color: p.textPrimary,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
+                                        height: 1.25,
                                       ),
                                     ),
                                   ),
 
                                   const SizedBox(height: 3),
 
-                                  SizedBox(
-                                    width: nodeSize,
-                                    child: Text(
-                                      e.time,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: p.textSecondary,
-                                        fontSize: 11,
-                                      ),
+                                  Text(
+                                    e.time,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: p.textSecondary,
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ],
