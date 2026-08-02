@@ -133,11 +133,17 @@ class TelemetryCard extends StatelessWidget {
             children: [
               Icon(icon, size: 17, color: p.textSecondary),
               const SizedBox(width: 10),
-              Text(
-                label,
-                style: TextStyle(color: p.textSecondary, fontSize: 13.5),
+              // Label can now shrink/ellipsize instead of overflowing
+              // if the card gets squeezed narrower than the text needs.
+              Expanded(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(color: p.textSecondary, fontSize: 13.5),
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 value,
                 style: TextStyle(
@@ -190,12 +196,19 @@ class TelemetryCard extends StatelessWidget {
             children: [
               Icon(icon, size: 15, color: p.textSecondary),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: p.textSecondary,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
+              // This is the label that was overflowing ("Flight Mode",
+              // "Temperature") — Expanded + ellipsis lets it shrink to
+              // fit instead of spilling past the box edge.
+              Expanded(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: p.textSecondary,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -203,6 +216,8 @@ class TelemetryCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
             style: TextStyle(
               color: valueColor,
               fontSize: 18,
@@ -215,7 +230,7 @@ class TelemetryCard extends StatelessWidget {
   }
 }
 
-/// Lightweight sparkline / mini area-chart, no external chart package needed.
+
 class Sparkline extends StatelessWidget {
   final List<double> data;
   final Color lineColor;
