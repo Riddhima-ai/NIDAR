@@ -1,5 +1,5 @@
-
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 enum MissionPhase { idle, active, paused, returning, aborted, completed }
@@ -26,7 +26,6 @@ class MissionNotice {
   const MissionNotice(this.time, this.message, this.colorOf);
 }
 
-
 class MissionState extends ChangeNotifier {
   MissionPhase phase = MissionPhase.idle;
   bool armed = false;
@@ -41,13 +40,35 @@ class MissionState extends ChangeNotifier {
   double signalDbm = -58;
   double tempC = 34;
 
+  // Rolling history for sparkline graphs (last 60 samples)
+  final List<double> batteryHistory = [];
+  final List<double> altitudeHistory = [];
+  final List<double> speedHistory = [];
+  final List<double> signalHistory = [];
+  final _rand = Random();
+
   final List<SurvivorHit> survivors = [];
   final List<TimelineEvent> timeline = [
     const TimelineEvent('Takeoff', '--:--', done: false),
   ];
   final List<String> notifications = [];
 
+  MissionState() {
+    _seedHistory();
+  }
+
   int get survivorsTotal => 6;
+
+  void _seedHistory() {
+    // fill with slight variation around the starting values so
+    // sparklines aren't empty/flat even before the mission starts
+    for (int i = 0; i < 20; i++) {
+      batteryHistory.add(battery.toDouble());
+      altitudeHistory.add(altitude + (_rand.nextDouble() - 0.5) * 0.4);
+      speedHistory.add(0.0);
+      signalHistory.add(signalDbm + (_rand.nextDouble() - 0.5) * 3);
+    }
+  }
 
   void arm() {
     if (phase != MissionPhase.idle) return;
@@ -108,15 +129,26 @@ class MissionState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _pushHistory(List<double> list, double value, {int maxLen = 60}) {
+    list.add(value);
+    if (list.length > maxLen) list.removeAt(0);
+  }
+
   void _tick() {
     elapsed += const Duration(seconds: 1);
 
-    
     if (phase == MissionPhase.active) {
       if (explorationPercent < 1.0) {
         explorationPercent = (explorationPercent + 0.004).clamp(0.0, 1.0);
       }
       if (battery > 15 && elapsed.inSeconds % 4 == 0) battery--;
+
+      // gentle simulated variation so the graphs aren't flat lines
+      altitude = (altitude + (_rand.nextDouble() - 0.5) * 0.3).clamp(0.0, 40.0);
+      signalDbm = (signalDbm + (_rand.nextDouble() - 0.5) * 2).clamp(
+        -90.0,
+        -30.0,
+      );
 
       if (survivors.length < survivorsTotal &&
           elapsed.inSeconds > 0 &&
@@ -143,6 +175,12 @@ class MissionState extends ChangeNotifier {
         _ticker?.cancel();
       }
     }
+
+    // record telemetry history every tick
+    _pushHistory(batteryHistory, battery.toDouble());
+    _pushHistory(altitudeHistory, altitude);
+    _pushHistory(speedHistory, speed);
+    _pushHistory(signalHistory, signalDbm);
 
     notifyListeners();
   }
