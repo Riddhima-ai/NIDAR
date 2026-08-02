@@ -37,8 +37,7 @@ class DesignScale extends StatelessWidget {
                   scale: scale,
                   alignment: Alignment.topLeft,
                   child: MediaQuery(
-                    // Force every descendant's MediaQuery.size to the
-                    // fixed design size, regardless of the real window.
+                    
                     data: MediaQuery.of(context).copyWith(
                       size: Size(designWidth, designHeight),
                       devicePixelRatio: 1.0,
