@@ -30,14 +30,18 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  // Created once for the lifetime of this screen — never recreated on nav
+  // switch, so mission data itself was already safe.
   final MissionState mission = MissionState();
+
   NavSection selected = NavSection.dashboard;
   bool cameraCollapsed = false;
+
   void onExitFullscreen() {
-  setState(() {
-    selected = NavSection.dashboard;
-  });
-}
+    setState(() {
+      selected = NavSection.dashboard;
+    });
+  }
 
   @override
   void initState() {
@@ -79,7 +83,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: p.bg,
       body: Row(
         children: [
-          
           LayoutBuilder(
             builder: (context, constraints) {
               return SidebarNav(
@@ -99,13 +102,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Container(height: 1, color: p.border),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return _buildBody(constraints.maxWidth);
-                      },
-                    ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // IndexedStack builds EVERY section's widget on every
+                      // rebuild, but only displays the selected one. Because
+                      // all of them stay mounted in the tree, none of them
+                      // get disposed when you switch nav sections — so
+                      // LiveMapGrid's animation/path, scroll positions,
+                      // camera stream, etc. all keep running in the
+                      // background instead of resetting when you come back.
+                      return IndexedStack(
+                        index: NavSection.values.indexOf(selected),
+                        children: [
+                          for (final section in NavSection.values)
+                            SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: _buildBodyFor(section, constraints.maxWidth),
+                            ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 FooterStatusBar(mission: mission),
@@ -117,8 +133,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildBody(double availableWidth) {
-    switch (selected) {
+  Widget _buildBodyFor(NavSection section, double availableWidth) {
+    switch (section) {
       case NavSection.dashboard:
         return _dashboardBody(availableWidth);
       case NavSection.map:
@@ -132,14 +148,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           height: 700,
           child: Column(
             children: [
-              SizedBox(height: 300, child:MissionTimelinePanel(mission: mission)) ,
+              SizedBox(height: 300, child: MissionTimelinePanel(mission: mission)),
               const SizedBox(height: 16),
               Expanded(child: MissionControlsPanel(mission: mission)),
             ],
           ),
         );
       case NavSection.camera:
-        return SizedBox(height: 700, child:CameraFullscreenView(mission: mission,onExitFullscreen: onExitFullscreen,)) ;
+        return SizedBox(
+          height: 700,
+          child: CameraFullscreenView(
+            mission: mission,
+            onExitFullscreen: onExitFullscreen,
+          ),
+        );
       case NavSection.logs:
         return SizedBox(height: 700, child: NotificationsPanel(mission: mission));
     }
@@ -148,10 +170,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _dashboardBody(double availableWidth) {
     const rowSpacing = 16.0;
 
-    
     final isCompact = availableWidth < 1200;
 
-   
     final telemetryColWidth = isCompact ? availableWidth : availableWidth * 0.20;
     final cameraColWidth = isCompact ? availableWidth : availableWidth * 0.26;
     // Map takes whatever's left; on compact screens it gets full width too.
