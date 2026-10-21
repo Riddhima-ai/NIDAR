@@ -1,0 +1,13 @@
+{
+  "dart.flutterSdkPath": "/Users/admin/Downloads/flutter",
+  "dart.analysisExcludedFolders": [
+    ".kilo/worktrees"
+  ],
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.metadata/**",
+    "**/archetype-resources/**",
+    "**/META-INF/maven/**",
+    "**/.kilo/worktrees/**"
+  ]
+}
