@@ -116,11 +116,18 @@ class WebSocketService {
       return;
     }
 
-    try {
-      _channel!.sink.add(command);
+    
+try {
+  _channel!.sink.add(
+    jsonEncode({
+      'type': 'command',
+      'command': command,
+    }),
+  );
 
-      print('WS COMMAND SENT: $command');
-    } catch (e) {
+  print('WS COMMAND SENT: $command');
+} catch (e) {
+
       print(
         'WS: Failed to send command "$command": $e',
       );
