@@ -20,6 +20,8 @@ enum MissionPhase {
 
   completed,
 
+  failed,
+
 }
 
 class SurvivorHit {
@@ -234,6 +236,20 @@ String missionStage = 'UNKNOWN';
   }
 
   int get survivorsTotal => 6;
+  String get missionOutcome {
+  switch (phase) {
+    case MissionPhase.completed:
+      return 'SUCCESS';
+    case MissionPhase.aborted:
+      return 'ABORTED';
+    case MissionPhase.failed:
+      return 'FAILURE';
+    case MissionPhase.idle:
+      return 'NOT STARTED';
+    default:
+      return 'IN PROGRESS';
+  }
+}
 
   void _seedHistory() {
 
@@ -932,8 +948,13 @@ if (data['mission_stage'] != null) {
         phase = MissionPhase.completed;
 
         break;
+        case 'FAILED':
+case 'FAILURE':
+  phase = MissionPhase.failed;
+  break;
 
     }
+    
 
   }
 

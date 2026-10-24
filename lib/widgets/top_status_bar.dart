@@ -25,7 +25,8 @@ class TopStatusBar extends StatelessWidget {
       MissionPhase.paused => 'MISSION PAUSED',
       MissionPhase.returning => 'RETURNING',
       MissionPhase.aborted => 'ABORTED',
-      MissionPhase.completed => 'COMPLETE',
+      MissionPhase.completed => 'SUCCESS',
+      MissionPhase.failed => 'FAILURE',
     };
 
     final phaseColor = switch (mission.phase) {
@@ -35,6 +36,23 @@ class TopStatusBar extends StatelessWidget {
       MissionPhase.returning => p.accent,
       MissionPhase.aborted => p.danger,
       MissionPhase.completed => p.success,
+      MissionPhase.failed => p.danger,
+    };
+
+    final outcomeLabel = switch (mission.phase) {
+      MissionPhase.completed => 'OUTCOME: SUCCESS',
+      MissionPhase.aborted => 'OUTCOME: ABORTED',
+      MissionPhase.failed => 'OUTCOME: FAILURE',
+      MissionPhase.idle => 'OUTCOME: NOT STARTED',
+      _ => 'OUTCOME: IN PROGRESS',
+    };
+
+    final outcomeColor = switch (mission.phase) {
+      MissionPhase.completed => p.success,
+      MissionPhase.aborted => p.danger,
+      MissionPhase.failed => p.danger,
+      MissionPhase.idle => p.textSecondary,
+      _ => p.accent,
     };
 
     final batteryColor = mission.battery <= 15
@@ -60,7 +78,7 @@ class TopStatusBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // STATUS ROW: Wraps naturally to fit the available width.
+          // STATUS ROW
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -86,6 +104,11 @@ class TopStatusBar extends StatelessWidget {
                 phaseColor,
                 p,
               ),
+              _statusPill(
+                outcomeLabel,
+                outcomeColor,
+                p,
+              ),
               IconButton(
                 tooltip: 'Toggle theme',
                 onPressed: onToggleTheme,
@@ -103,7 +126,7 @@ class TopStatusBar extends StatelessWidget {
           Divider(height: 1, color: p.border),
           const SizedBox(height: 12),
 
-          // LIVE METRICS: Share the available width.
+          // LIVE METRICS
           LayoutBuilder(
             builder: (context, constraints) {
               final columns = constraints.maxWidth < 520
