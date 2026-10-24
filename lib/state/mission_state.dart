@@ -20,6 +20,8 @@ enum MissionPhase {
 
   completed,
 
+  failed,
+
 }
 
 class SurvivorHit {
@@ -97,6 +99,9 @@ class MissionState extends ChangeNotifier {
   MissionPhase phase = MissionPhase.idle;
 
   bool armed = false;
+  bool connected = false;
+String flightMode = 'UNKNOWN';
+String missionStage = 'UNKNOWN';
 
   Duration elapsed = Duration.zero;
 
@@ -231,6 +236,20 @@ class MissionState extends ChangeNotifier {
   }
 
   int get survivorsTotal => 6;
+  String get missionOutcome {
+  switch (phase) {
+    case MissionPhase.completed:
+      return 'SUCCESS';
+    case MissionPhase.aborted:
+      return 'ABORTED';
+    case MissionPhase.failed:
+      return 'FAILURE';
+    case MissionPhase.idle:
+      return 'NOT STARTED';
+    default:
+      return 'IN PROGRESS';
+  }
+}
 
   void _seedHistory() {
 
@@ -317,28 +336,37 @@ class MissionState extends ChangeNotifier {
     }
 
     if (data['altitude'] != null) {
+  altitude = _toDouble(data['altitude']);
+} else if (data['pose'] is Map &&
+    (data['pose'] as Map)['z'] != null) {
+  altitude = _toDouble((data['pose'] as Map)['z']);
+}
 
-      altitude = _toDouble(data['altitude']);
+    
+final velocity = data['velocity'];
 
-    }
+if (velocity is num) {
+  speed = velocity.toDouble();
+} else if (velocity is Map) {
+  final vx = _toDouble(velocity['x']);
+  final vy = _toDouble(velocity['y']);
+  final vz = _toDouble(velocity['z']);
+  speed = _magnitude(vx, vy, vz);
+}
 
-    final velocity = data['velocity'];
+// These fields must be updated independently of velocity.
+if (data['connected'] != null) {
+  connected = data['connected'] == true;
+}
 
-    if (velocity is num) {
+if (data['mode'] != null) {
+  flightMode = data['mode'].toString().toUpperCase();
+}
 
-      speed = velocity.toDouble();
+if (data['mission_stage'] != null) {
+  missionStage = data['mission_stage'].toString().toUpperCase();
+}
 
-    } else if (velocity is Map) {
-
-      final vx = _toDouble(velocity['x']);
-
-      final vy = _toDouble(velocity['y']);
-
-      final vz = _toDouble(velocity['z']);
-
-      speed = _magnitude(vx, vy, vz);
-
-    }
 
     _updateDronePosition(data);
 
@@ -920,8 +948,13 @@ class MissionState extends ChangeNotifier {
         phase = MissionPhase.completed;
 
         break;
+        case 'FAILED':
+case 'FAILURE':
+  phase = MissionPhase.failed;
+  break;
 
     }
+    
 
   }
 
